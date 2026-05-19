@@ -2,7 +2,7 @@ name: Backend DevSecOps CI
 
 on:
   push:
-    branches: [ "main" , "develop-back"]
+    branches: [ "main" , "develop_back"]
     paths:
       - 'backend/**'
   pull_request:
