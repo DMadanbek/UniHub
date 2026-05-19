@@ -1,0 +1,79 @@
+name: Frontend DevSecOps CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'frontend/**'
+
+defaults:
+  run:
+    working-directory: ./frontend
+
+jobs:
+  security-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Секреты блокируем сразу, без отправки в SARIF, так как скомпрометированный пароль 
+      # нужно немедленно удалять/менять, а не заводить на него карточку в Security Tab.
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # SAST: Semgrep с выводом в SARIF
+      - name: Install and Run Semgrep (SAST)
+        run: |
+          python -m pip install semgrep
+          semgrep scan --config auto --sarif --output=semgrep-frontend.sarif
+
+      - name: Upload Semgrep SARIF
+        if: always() # Загружаем отчет, даже если Semgrep нашел уязвимости
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: frontend/semgrep-frontend.sarif
+          category: semgrep-frontend
+
+      # SCA: Trivy сканирует npm-пакеты 
+      - name: Run Trivy (SCA)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './frontend'
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          # Папка frontend не добавляется в путь, так как Trivy action запускается в корне проекта
+          sarif_file: trivy-frontend.sarif 
+          category: trivy-frontend
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Test Build
+        run: npm run build
