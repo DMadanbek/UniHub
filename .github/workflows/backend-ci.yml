@@ -72,8 +72,7 @@ jobs:
       # Semgrep SAST
       # -------------------------
       - name: Run Semgrep
-        # Гарантирует запуск, даже если Gitleaks нашел секреты и упал
-        if: success() || failure() 
+        if: success() || failure()
         uses: returntocorp/semgrep-action@v1
         with:
           config: p/java
@@ -84,33 +83,25 @@ jobs:
       # -------------------------
       - name: Upload Semgrep SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
         with:
-          sarif_file: semgrep.sarif
+          sarif_file: backend/semgrep.sarif # <-- Указали точный путь от корня репозитория
           category: semgrep-backend
 
       # -------------------------
       # Trivy SCA + Misconfig
       # -------------------------
       - name: Run Trivy Scanner
-        # Гарантирует запуск, даже если Semgrep нашел уязвимости
-        if: success() || failure() 
+        if: success() || failure()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: ./backend
-
           scanners: vuln,secret,misconfig
-
           severity: CRITICAL,HIGH
-
           ignore-unfixed: true
-
           format: sarif
-          output: trivy-results.sarif
-
-          # Меняем на 0. Позволяем шагу успешно завершиться, 
-          # чтобы гарантированно отдать SARIF файл следующему шагу.
+          output: trivy-results.sarif # Он запишется внутрь ./backend/
           exit-code: 0 
 
       # -------------------------
@@ -118,9 +109,9 @@ jobs:
       # -------------------------
       - name: Upload Trivy SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
         with:
-          sarif_file: trivy-results.sarif
+          sarif_file: backend/trivy-results.sarif # <-- Указали точный путь от корня репозитория
           category: trivy-backend
 
       # -------------------------
@@ -132,9 +123,8 @@ jobs:
         with:
           name: security-reports
           path: |
-            semgrep.sarif
-            trivy-results.sarif
-
+            backend/semgrep.sarif
+            backend/trivy-results.sarif
   # =========================
   # BUILD + TESTS
   # =========================
