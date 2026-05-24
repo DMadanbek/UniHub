@@ -85,7 +85,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
         with:
-          sarif_file: backend/semgrep.sarif # <-- Указали точный путь от корня репозитория
+          sarif_file: semgrep.sarif # <-- Указали точный путь от корня репозитория
           category: semgrep-backend
 
       # -------------------------
@@ -111,7 +111,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
         with:
-          sarif_file: backend/trivy-results.sarif # <-- Указали точный путь от корня репозитория
+          sarif_file: trivy-results.sarif # <-- Указали точный путь от корня репозитория
           category: trivy-backend
 
       # -------------------------
