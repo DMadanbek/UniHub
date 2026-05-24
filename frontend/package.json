@@ -7,6 +7,12 @@
     "build": "vite build",
     "dev": "vite"
   },
+"pnpm": {
+  "onlyBuiltDependencies": [
+    "esbuild",
+    "@tailwindcss/oxide"
+  ]
+},
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
