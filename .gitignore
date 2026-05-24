@@ -1,0 +1,47 @@
+# Зависимости
+node_modules/
+
+# Папка сборки фронтенда
+dist/
+build/
+output/
+
+# Логи и кэши
+npm-debug.log*
+yarn-debug.log*
+yarn-test.log*
+.pnpm-debug.log*
+.vite/
+
+# Файлы переменных окружения (НИКОГДА НЕ ПУШИТЬ!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Скомпилированные файлы
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Логи и временные файлы Maven
+*.log
+.mvn/
+
+# Системные файлы macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Файлы Windows
+Thumbs.db
+ehthumbs.db
+
+# Файлы редакторов
+.vscode/
+.idea/
+*.swp
+*.swo
