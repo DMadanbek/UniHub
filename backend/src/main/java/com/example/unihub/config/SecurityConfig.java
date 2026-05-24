@@ -60,7 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/event/create",
                                 "/api/event/update/**",
-                                "/api/event/delete/**"
+                                "/api/event/delete/**",
+                                "/api/ai/generate-description"
                         ).hasRole("ADMIN")
                         .requestMatchers(
                                 "/api/vacancy/create",
