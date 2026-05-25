@@ -22,7 +22,10 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
     private LocalDate createdAt;
     private LocalDate startDate;
 
