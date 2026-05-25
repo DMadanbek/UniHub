@@ -21,9 +21,7 @@ permissions:
 
 jobs:
 
-  # =========================
   # SECURITY SCANNING
-  # =========================
 
   security:
     name: Security Scanning
@@ -34,33 +32,31 @@ jobs:
         working-directory: ./backend
 
     steps:
-
-      # -------------------------
       # Checkout
-      # -------------------------
+      
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -------------------------
+      
       # Gitleaks
-      # -------------------------
+      
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # -------------------------
+      
       # Dependency Review (PR)
-      # -------------------------
+      
       - name: Dependency Review
         if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
 
-      # -------------------------
+      
       # Setup Java
-      # -------------------------
+      
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
@@ -68,9 +64,9 @@ jobs:
           java-version: 17
           cache: maven
 
-      # -------------------------
+      
       # Semgrep SAST
-      # -------------------------
+      
       - name: Run Semgrep
         if: success() || failure()
         uses: returntocorp/semgrep-action@v1
@@ -78,19 +74,19 @@ jobs:
           config: p/java
           generateSarif: "1"
 
-      # -------------------------
+      
       # Upload Semgrep SARIF
-      # -------------------------
+      
       - name: Upload Semgrep SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
+        uses: github/codeql-action/upload-sarif@v4 
         with:
-          sarif_file: semgrep.sarif # <-- Указали точный путь от корня репозитория
+          sarif_file: semgrep.sarif 
           category: semgrep-backend
 
-      # -------------------------
+      
       # Trivy SCA + Misconfig
-      # -------------------------
+      
       - name: Run Trivy Scanner
         if: success() || failure()
         uses: aquasecurity/trivy-action@master
@@ -101,22 +97,22 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           format: sarif
-          output: trivy-results.sarif # Он запишется внутрь ./backend/
+          output: trivy-results.sarif 
           exit-code: 0 
 
-      # -------------------------
+
       # Upload Trivy SARIF
-      # -------------------------
+
       - name: Upload Trivy SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v4 # Обновили до v4
+        uses: github/codeql-action/upload-sarif@v4 
         with:
-          sarif_file: trivy-results.sarif # <-- Указали точный путь от корня репозитория
+          sarif_file: trivy-results.sarif 
           category: trivy-backend
 
-      # -------------------------
+
       # Upload Security Artifacts
-      # -------------------------
+
       - name: Upload Security Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -125,9 +121,9 @@ jobs:
           path: |
             backend/semgrep.sarif
             backend/trivy-results.sarif
-  # =========================
+
   # BUILD + TESTS
-  # =========================
+
 
   build-and-test:
     name: Build and Test
@@ -157,15 +153,15 @@ jobs:
 
     steps:
 
-      # -------------------------
+
       # Checkout
-      # -------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -------------------------
+
       # Setup Java
-      # -------------------------
+
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
@@ -173,9 +169,9 @@ jobs:
           java-version: 17
           cache: maven
 
-      # -------------------------
+
       # Maven Build
-      # -------------------------
+
       - name: Build and Test with Maven
         if: hashFiles('backend/pom.xml') != ''
         run: mvn clean verify
@@ -184,9 +180,9 @@ jobs:
           SPRING_DATASOURCE_USERNAME: testuser
           SPRING_DATASOURCE_PASSWORD: testpassword
 
-      # -------------------------
+
       # Gradle Build
-      # -------------------------
+
       - name: Build and Test with Gradle
         if: hashFiles('backend/build.gradle', 'backend/build.gradle.kts') != ''
         run: ./gradlew build
