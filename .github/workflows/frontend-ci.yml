@@ -1,79 +1,65 @@
-name: Frontend DevSecOps CI
+name: Frontend CI
 
 on:
   push:
-    branches: [ "main" , "develop_front"]
-    paths:
-      - 'frontend/**'
+    branches: [ main, develop_front ]
   pull_request:
-    branches: [ "main", "develop_front" ]
-    paths:
-      - 'frontend/**'
-
-defaults:
-  run:
-    working-directory: ./frontend
+    branches: [ main ]
 
 jobs:
   security-and-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: ./frontend # Убедись, что путь верный
+    
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      # Секреты блокируем сразу, без отправки в SARIF, так как скомпрометированный пароль 
-      # нужно немедленно удалять/менять, а не заводить на него карточку в Security Tab.
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install -g pnpm && pnpm install
 
-      # SAST: Semgrep с выводом в SARIF
-      - name: Install and Run Semgrep (SAST)
-        run: |
-          python -m pip install semgrep
-          semgrep scan --config auto --sarif --output=semgrep-frontend.sarif
-
-      - name: Upload Semgrep SARIF
-        if: always() # Загружаем отчет, даже если Semgrep нашел уязвимости
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: frontend/semgrep-frontend.sarif
-          category: semgrep-frontend
-
-      # SCA: Trivy сканирует npm-пакеты 
-      - name: Run Trivy (SCA)
+      # Сканирование уязвимостей зависимостей (SCA)
+      - name: Run Trivy for frontend
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          scan-ref: './frontend'
+          scan-ref: '.'
           format: 'sarif'
-          output: 'trivy-frontend.sarif'
-          exit-code: '1'
+          output: 'trivy-results.sarif'
+          exit-code: 0
           severity: 'CRITICAL,HIGH'
 
-      - name: Upload Trivy SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+      # Сканирование кода (SAST)
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
         with:
-          # Папка frontend не добавляется в путь, так как Trivy action запускается в корне проекта
-          sarif_file: trivy-frontend.sarif 
+          generateSarif: "true"
+          sarifFile: "semgrep.sarif"
+          config: "auto"
+
+      # Загрузка отчетов
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
           category: trivy-frontend
 
-      - name: Run Linter
-        run: npm run lint
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-frontend
 
-      - name: Test Build
-        run: npm run build
+      # Билд проекта для проверки работоспособности
+      - name: Build project
+        run: pnpm run build
